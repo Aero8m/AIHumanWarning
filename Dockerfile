@@ -5,7 +5,12 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY app app
+COPY migrations migrations
+COPY boot.sh run.py ./
+
+RUN chmod +x boot.sh
+
 
 EXPOSE 5000
 

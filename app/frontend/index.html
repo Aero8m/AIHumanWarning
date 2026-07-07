@@ -25,7 +25,7 @@
                 <a href="#page-settings" class="text-sm sm:text-base text-gray-600 hover:text-blue-600 transition-colors">
                     <i class="fa-solid fa-gear mr-1"></i><span>设置</span>
                 </a>
-                <div class="flex items-center gap-3 ml-2 sm:ml-4 pl-2 sm:pl-4 border-l border-gray-200">
+                <div class="flex items-center gap-3">
                     <span id="nav-username" class="text-sm text-gray-500 hidden sm:inline"></span>
                     <button onclick="logout()" class="text-sm text-gray-600 hover:text-red-600 transition-colors">
                         <i class="fa-solid fa-right-from-bracket mr-1"></i><span class="hidden sm:inline">退出</span>
@@ -178,9 +178,29 @@
         </div>
 
         <!-- Records Section -->
-        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <i class="fa-solid fa-clock-rotate-left text-blue-600"></i>检测记录
-        </h2>
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <i class="fa-solid fa-clock-rotate-left text-blue-600"></i>检测记录
+            </h2>
+            <div id="records-actions" class="flex items-center gap-2 hidden">
+                <button id="select-all-btn" onclick="window.toggleSelectAll()"
+                    class="text-xs px-3 py-1.5 border border-gray-300 text-gray-600 rounded-md hover:bg-gray-100 transition-colors">
+                    全选
+                </button>
+                <button id="delete-selected-btn" onclick="window.deleteSelectedRecords()"
+                    class="text-xs px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors hidden">
+                    <i class="fa-solid fa-trash-can mr-1"></i>删除选中 (<span id="selected-count">0</span>)
+                </button>
+                <button onclick="window.exitSelectMode()"
+                    class="text-xs px-3 py-1.5 text-gray-500 hover:text-gray-700 transition-colors">
+                    取消
+                </button>
+            </div>
+            <button id="enter-select-btn" onclick="window.enterSelectMode()"
+                class="text-xs px-3 py-1.5 border border-gray-300 text-gray-600 rounded-md hover:bg-gray-100 transition-colors">
+                <i class="fa-solid fa-check-square mr-1"></i>选择
+            </button>
+        </div>
         <div id="records-loading" class="flex justify-center py-12">
             <div class="loading-spinner"></div>
         </div>
@@ -295,7 +315,7 @@
             <div class="flex gap-4">
                 <div class="flex-1">
                     <label class="block text-sm font-medium text-gray-700 mb-1">检测间隔（秒）</label>
-                    <input type="number" id="stream-sec" min="1" value="30"
+                    <input type="number" id="stream-sec" min="5" value="30"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
                 <div class="flex items-end pb-2">
@@ -371,13 +391,19 @@
     var deleteTargetId = null;
     var currentDetailId = null;
     var streamsData = [];
+    var selectedRecordIds = [];
+    var isSelectMode = false;
+    var recordsRefreshInterval = null;
+    var knownRecordIds = [];
 
     /* ============= Toast ============= */
     function showToast(msg, type) {
         var toast = document.getElementById('toast');
         var icon = type === 'error' ? 'fa-circle-xmark text-red-400' :
+                   type === 'warning' ? 'fa-bell text-orange-400' :
                    type === 'success' ? 'fa-circle-check text-green-400' : 'fa-circle-info text-blue-400';
         var bg = type === 'error' ? 'bg-red-50 border-red-200 text-red-800' :
+                 type === 'warning' ? 'bg-orange-50 border-orange-200 text-orange-800' :
                  type === 'success' ? 'bg-green-50 border-green-200 text-green-800' :
                  'bg-blue-50 border-blue-200 text-blue-800';
         toast.className = 'fixed top-4 right-4 z-50 toast-enter';
@@ -410,6 +436,10 @@
         if (!isAuth && hash !== 'page-auth') {
             window.location.hash = 'page-auth';
             return;
+        }
+
+        if (hash.indexOf('page-stream-detail') !== 0) {
+            stopRecordsRefresh();
         }
 
         if (hash === 'page-auth') {
@@ -514,7 +544,7 @@
     };
 
     window.logout = function() {
-        logout();
+        clearToken();
         showToast('已退出登录', 'info');
     };
 
@@ -553,7 +583,7 @@
     function createStreamCard(s) {
         var liveUrl = api.getLiveStreamUrl(s.id);
         var card = document.createElement('div');
-        card.className = 'stream-card bg-white rounded-lg border border-gray-200 overflow-hidden transition-shadow';
+        card.className = 'stream-card bg-white rounded-lg border border-gray-200 overflow-hidden transition-shadow cursor-pointer';
 
         card.innerHTML =
             '<div class="relative bg-black" style="aspect-ratio:16/9">' +
@@ -574,9 +604,6 @@
                     '<span class="truncate flex-1" title="' + escHtml(s.prompt) + '"><i class="fa-solid fa-message mr-1"></i>' + escHtml(s.prompt) + '</span>' +
                 '</div>' +
                 '<div class="flex items-center flex-wrap gap-2 pt-3 border-t border-gray-100">' +
-                    '<button onclick="window.location.hash=\'page-stream-detail?id=' + s.id + '\'"' +
-                        ' class="text-xs px-3 py-1.5 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors">' +
-                        '<i class="fa-solid fa-list mr-1"></i>记录</button>' +
                     '<button onclick="window.showEditModal(' + s.id + ')"' +
                         ' class="text-xs px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors">' +
                         '<i class="fa-solid fa-pen mr-1"></i>编辑</button>' +
@@ -597,6 +624,10 @@
                 '</div>' +
             '</div>';
 
+        card.onclick = function(e) {
+            if (e.target.closest('button, label, a, input')) return;
+            window.location.hash = 'page-stream-detail?id=' + s.id;
+        };
         return card;
     }
 
@@ -611,6 +642,18 @@
         if (!str) return '';
         return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
                   .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    function formatTime(ts) {
+        if (!ts) return '';
+        var d = new Date(ts * 1000);
+        var y = d.getFullYear();
+        var M = String(d.getMonth() + 1).padStart(2, '0');
+        var D = String(d.getDate()).padStart(2, '0');
+        var h = String(d.getHours()).padStart(2, '0');
+        var m = String(d.getMinutes()).padStart(2, '0');
+        var s = String(d.getSeconds()).padStart(2, '0');
+        return y + '-' + M + '-' + D + ' ' + h + ':' + m + ':' + s;
     }
 
     window.toggleStream = async function(id, enable) {
@@ -673,6 +716,10 @@
 
         if (!name || !rtsp || !prompt || !sec) {
             showToast('请填写所有必填字段', 'error');
+            return;
+        }
+        if (sec < 5) {
+            showToast('检测间隔至少为 5 秒', 'error');
             return;
         }
 
@@ -758,6 +805,7 @@
 
         // Load records
         loadRecords(id);
+        startRecordsRefresh(id);
     }
 
     function updateDetailStatus(enable) {
@@ -805,6 +853,7 @@
 
         try {
             var records = await api.getRecords(id) || [];
+            knownRecordIds = records.map(function(r) { return r.id; });
             loading.classList.add('hidden');
             if (records.length === 0) {
                 empty.classList.remove('hidden');
@@ -820,9 +869,71 @@
         }
     }
 
+    function startRecordsRefresh(id) {
+        stopRecordsRefresh();
+        recordsRefreshInterval = setInterval(function() {
+            pollRecords(id);
+        }, 1500);
+    }
+
+    function stopRecordsRefresh() {
+        if (recordsRefreshInterval) {
+            clearInterval(recordsRefreshInterval);
+            recordsRefreshInterval = null;
+        }
+    }
+
+    async function pollRecords(id) {
+        try {
+            var records = await api.getRecords(id) || [];
+            records.sort(function(a, b) { return b.time - a.time; });
+            var alertRecords = [];
+            records.forEach(function(r) {
+                if (r.status && knownRecordIds.indexOf(r.id) === -1) {
+                    alertRecords.push(r);
+                }
+            });
+            knownRecordIds = records.map(function(r) { return r.id; });
+            if (alertRecords.length > 0) {
+                showToast('检测到 ' + alertRecords.length + ' 条新预警！', 'warning');
+            }
+            if (!isSelectMode) {
+                var list = document.getElementById('records-list');
+                var empty = document.getElementById('records-empty');
+                if (records.length === 0) {
+                    list.classList.add('hidden');
+                    empty.classList.remove('hidden');
+                    return;
+                }
+                empty.classList.add('hidden');
+                var existingIds = {};
+                var existingEls = list.querySelectorAll('[data-record-id]');
+                existingEls.forEach(function(el) {
+                    existingIds[parseInt(el.getAttribute('data-record-id'), 10)] = el;
+                });
+                existingEls.forEach(function(el) {
+                    var rid = parseInt(el.getAttribute('data-record-id'), 10);
+                    if (knownRecordIds.indexOf(rid) === -1) {
+                        el.remove();
+                    }
+                });
+                records.forEach(function(r) {
+                    if (!existingIds[r.id]) {
+                        list.insertBefore(createRecordRow(r), list.firstChild);
+                    }
+                });
+                list.classList.remove('hidden');
+                loadRecordImages();
+            }
+        } catch (e) {
+            // silent fail for polling
+        }
+    }
+
     function renderRecords(records) {
         var list = document.getElementById('records-list');
         list.innerHTML = '';
+        records.sort(function(a, b) { return b.time - a.time; });
         records.forEach(function(r) {
             list.appendChild(createRecordRow(r));
         });
@@ -839,21 +950,32 @@
         var statusIcon = r.status ? 'fa-triangle-exclamation' : 'fa-circle-check';
         var statusText = r.status ? '预警' : '正常';
 
+        div.setAttribute('data-record-id', r.id);
         div.innerHTML =
-            '<div class="flex-shrink-0">' +
-                '<div class="record-thumb-container record-thumb flex items-center justify-center bg-gray-100 text-gray-400"' +
-                    ' data-stream-id="' + r.stream_id + '" data-filename="' + filename + '">' +
-                    '<i class="fa-solid fa-spinner fa-spin"></i>' +
+            '<div class="flex items-start gap-3 w-full">' +
+                '<div class="record-checkbox flex-shrink-0 pt-1 hidden">' +
+                    '<input type="checkbox" onchange="window.toggleRecordSelect(' + r.id + ', this.checked)"' +
+                        ' class="w-4 h-4 text-blue-600 border-gray-300 rounded cursor-pointer">' +
                 '</div>' +
-            '</div>' +
-            '<div class="flex-1 min-w-0">' +
-                '<div class="flex items-center gap-2 mb-1.5">' +
-                    '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ' + statusColor + '">' +
-                        '<i class="fa-solid ' + statusIcon + '"></i>' + statusText +
-                    '</span>' +
+                '<div class="flex-shrink-0">' +
+                    '<div class="record-thumb-container record-thumb flex items-center justify-center bg-gray-100 text-gray-400"' +
+                        ' data-stream-id="' + r.stream_id + '" data-filename="' + filename + '">' +
+                        '<i class="fa-solid fa-spinner fa-spin"></i>' +
+                    '</div>' +
                 '</div>' +
-                '<p class="text-sm text-gray-700 mb-1"><span class="text-gray-500">理由：</span>' + escHtml(r.reason) + '</p>' +
-                '<p class="text-xs text-gray-500"><span class="text-gray-400">提示词：</span>' + escHtml(r.prompt) + '</p>' +
+                '<div class="flex-1 min-w-0">' +
+                    '<div class="flex items-center gap-2 mb-1.5">' +
+                        '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ' + statusColor + '">' +
+                            '<i class="fa-solid ' + statusIcon + '"></i>' + statusText +
+                        '</span>' +
+                        '<button onclick="event.stopPropagation();window.deleteRecord(' + r.stream_id + ',' + r.id + ')"' +
+                            ' class="ml-auto text-xs px-2 py-1 text-red-600 hover:text-white hover:bg-red-600 border border-red-200 hover:border-red-600 rounded transition-colors" title="删除记录">' +
+                            '<i class="fa-solid fa-trash-can"></i></button>' +
+                    '</div>' +
+                    '<p class="text-sm text-gray-700 mb-1"><span class="text-gray-500">理由：</span>' + escHtml(r.reason) + '</p>' +
+                    '<p class="text-xs text-gray-500"><span class="text-gray-400">提示词：</span>' + escHtml(r.prompt) + '</p>' +
+                    '<p class="text-xs text-gray-400 mt-1"><i class="fa-regular fa-clock mr-1"></i>' + formatTime(r.time) + '</p>' +
+                '</div>' +
             '</div>';
 
         return div;
@@ -867,6 +989,8 @@
                 container.innerHTML = '<div class="record-thumb flex items-center justify-center bg-gray-100 text-gray-400"><i class="fa-solid fa-image"></i></div>';
                 return;
             }
+            if (container.hasAttribute('data-img-loaded')) return;
+            container.setAttribute('data-img-loaded', '1');
             api.fetchImageBlob(streamId, filename)
                 .then(function(blob) {
                     var blobUrl = URL.createObjectURL(blob);
@@ -883,6 +1007,101 @@
                 });
         });
     }
+
+    function updateDeleteSelectedBtn() {
+        var btn = document.getElementById('delete-selected-btn');
+        var count = document.getElementById('selected-count');
+        count.textContent = selectedRecordIds.length;
+        if (selectedRecordIds.length > 0) {
+            btn.classList.remove('hidden');
+        } else {
+            btn.classList.add('hidden');
+        }
+    }
+
+    window.enterSelectMode = function() {
+        isSelectMode = true;
+        selectedRecordIds = [];
+        document.getElementById('enter-select-btn').classList.add('hidden');
+        document.getElementById('records-actions').classList.remove('hidden');
+        document.querySelectorAll('.record-checkbox').forEach(function(el) {
+            el.classList.remove('hidden');
+        });
+        document.querySelectorAll('.record-checkbox input').forEach(function(cb) {
+            cb.checked = false;
+        });
+        document.getElementById('select-all-btn').textContent = '全选';
+        updateDeleteSelectedBtn();
+    };
+
+    window.exitSelectMode = function() {
+        isSelectMode = false;
+        selectedRecordIds = [];
+        document.getElementById('enter-select-btn').classList.remove('hidden');
+        document.getElementById('records-actions').classList.add('hidden');
+        document.querySelectorAll('.record-checkbox').forEach(function(el) {
+            el.classList.add('hidden');
+        });
+    };
+
+    window.toggleRecordSelect = function(id, checked) {
+        if (checked) {
+            if (selectedRecordIds.indexOf(id) === -1) {
+                selectedRecordIds.push(id);
+            }
+        } else {
+            var idx = selectedRecordIds.indexOf(id);
+            if (idx !== -1) {
+                selectedRecordIds.splice(idx, 1);
+            }
+        }
+        updateDeleteSelectedBtn();
+    };
+
+    window.toggleSelectAll = function() {
+        var allChecked = document.querySelectorAll('.record-checkbox input:not(:checked)').length === 0;
+        var checkboxes = document.querySelectorAll('.record-checkbox input');
+        var btn = document.getElementById('select-all-btn');
+        if (allChecked) {
+            checkboxes.forEach(function(cb) { cb.checked = false; });
+            selectedRecordIds = [];
+            btn.textContent = '全选';
+        } else {
+            checkboxes.forEach(function(cb) { cb.checked = true; });
+            selectedRecordIds = [];
+            document.querySelectorAll('[data-record-id]').forEach(function(el) {
+                selectedRecordIds.push(parseInt(el.getAttribute('data-record-id'), 10));
+            });
+            btn.textContent = '取消全选';
+        }
+        updateDeleteSelectedBtn();
+    };
+
+    window.deleteSelectedRecords = async function() {
+        if (selectedRecordIds.length === 0) return;
+        if (!confirm('确定要删除选中的 ' + selectedRecordIds.length + ' 条检测记录吗？')) return;
+        try {
+            for (var i = 0; i < selectedRecordIds.length; i++) {
+                await api.deleteRecord(currentDetailId, selectedRecordIds[i]);
+            }
+            showToast('已删除 ' + selectedRecordIds.length + ' 条记录', 'success');
+            exitSelectMode();
+            loadRecords(currentDetailId);
+        } catch (e) {
+            showToast('删除失败: ' + e.message, 'error');
+        }
+    };
+
+    window.deleteRecord = async function(streamId, recordId) {
+        if (!confirm('确定要删除这条检测记录吗？')) return;
+        try {
+            await api.deleteRecord(streamId, recordId);
+            showToast('记录已删除', 'success');
+            loadRecords(currentDetailId);
+        } catch (e) {
+            showToast('删除失败: ' + e.message, 'error');
+        }
+    };
 
     window.showImagePreview = function(streamId, filename) {
         var modal = document.getElementById('image-preview-modal');

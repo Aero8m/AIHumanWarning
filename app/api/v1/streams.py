@@ -101,3 +101,20 @@ def live_stream(id):
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + buf.tobytes() + b'\r\n')
     return Response(stream_with_context(generate()), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@streams_bp.route("/<id>/records/delete",methods=["POST"])
+@jwt_required()
+def delete_record(id):
+    stream = Stream.query.filter_by(user_id=get_jwt_identity(),id=id).first()
+    if not stream:
+        return error("stream not found")
+    record = stream.records.filter_by(id=request.get_json()["id"]).first()
+    try:
+        os.remove(basedir + f"//data/images/{stream.id}/{record.image_url}")
+    except:
+        pass
+    if not record:
+        return error("record not found")
+    db.session.delete(record)
+    db.session.commit()
+    return success()

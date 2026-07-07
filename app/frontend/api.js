@@ -12,7 +12,13 @@ async function request(method, path, data) {
         options.body = JSON.stringify(data);
     }
     var response = await fetch(url, options);
-    var result = await response.json();
+    var result;
+    try {
+        result = await response.json();
+    } catch (e) {
+        var statusText = response.status ? ' (HTTP ' + response.status + ')' : '';
+        throw new Error('服务器内部错误' + statusText);
+    }
     if (result.code === 401) {
         clearToken();
         window.location.hash = 'page-auth';
@@ -48,6 +54,9 @@ var api = {
     },
     getRecords: function(id) {
         return request('GET', '/streams/' + id + '/records');
+    },
+    deleteRecord: function(streamId, recordId) {
+        return request('POST', '/streams/' + streamId + '/records/delete', { id: recordId });
     },
     getLiveStreamUrl: function(id) {
         return API_BASE + '/streams/' + id + '/live_stream?token=' + getToken();

@@ -2,6 +2,7 @@ from .extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token
 from flask import url_for
+import datetime
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -27,7 +28,6 @@ class User(db.Model):
         return {
             'id': self.id,
             'username': self.username,
-            'password_hash': self.password_hash,
             'llm_baseurl': self.llm_baseurl,
             'llm_apikey': self.llm_apikey,
             'llm_modelname': self.llm_modelname
@@ -71,6 +71,7 @@ class StreamRecord(db.Model):
     status = db.Column(db.Boolean, nullable=False)
     reason = db.Column(db.String(80), nullable=False)
     image_url = db.Column(db.String(256), nullable=False)
+    time = db.Column(db.DateTime, nullable=False,default=datetime.datetime.now)
     def __init__(self, stream_id, status, reason, image_name):
         self.stream_id = stream_id
         self.user_id = Stream.query.get(stream_id).user_id
@@ -86,4 +87,5 @@ class StreamRecord(db.Model):
                 "status": self.status,
                 "reason": self.reason,
                 "image_url": url_for('v1.stream.record_image', id=self.stream_id, filename=self.image_url, _external=True),
+                "time": datetime.datetime.timestamp(self.time),
                 }

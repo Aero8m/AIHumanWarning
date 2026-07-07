@@ -165,8 +165,7 @@ def stop_task(stream_id):
 def stop_all_tasks():
     global tasks
     print(f"[SCHEDULER] Stopping all tasks")
-    for task in tasks:
-        task.stop()
-        tasks.pop(task.id)
-        print(f"[SCHEDULER] Task ID {task.id} stopped.")
+    while len(tasks) > 0:
+        tasks[0].stop()
+        tasks.pop(0)
 

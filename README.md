@@ -390,7 +390,8 @@ GET /api/v1/streams/<id>/records
       "prompt": "检测画面中是否有人闯入",
       "status": true,
       "reason": "检测到有人闯入",
-      "image_url": "http://host:5000/api/v1/streams/1/records/image/AIHWCAP_1_2026-07-07_12-00-00.png"
+      "image_url": "http://host:5000/api/v1/streams/1/records/image/AIHWCAP_1_2026-07-07_12-00-00.png",
+      "time": 1770038400.0
     }
   ]
 }
@@ -567,6 +568,7 @@ POST /api/v1/llm_info/edit
 | status | Boolean | NOT NULL | 检测结果（true=预警成立） |
 | reason | String(80) | NOT NULL | LLM 返回的理由 |
 | image_url | String(256) | NOT NULL | 截图文件名 |
+| time | DateTime | NOT NULL, default=now | 记录创建时间 |
 
 ---
 
