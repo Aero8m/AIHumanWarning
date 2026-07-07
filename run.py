@@ -7,7 +7,7 @@ def init():
     if not os.path.exists(basedir + "/data/images"):
         os.mkdir(basedir + "/data/images")
 
-app = create_app("development")
+app = create_app("production")
 
 if __name__ == '__main__':
     init()
