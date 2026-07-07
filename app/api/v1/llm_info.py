@@ -3,6 +3,7 @@ from ...models import User
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from ...utils.response import success,error
 from ...extensions import db
+from ...scheduler import load_tasks,stop_all_tasks
 llm_info_bp = Blueprint('llm_info', __name__)
 
 @llm_info_bp.route('/')
@@ -20,4 +21,6 @@ def edit():
         if allow_property in body.keys():
             setattr(user, "llm_" + allow_property, body[allow_property])
     db.session.commit()
+    stop_all_tasks()
+    load_tasks(None)
     return success()

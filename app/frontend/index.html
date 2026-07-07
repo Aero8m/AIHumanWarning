@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIHumanWarning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-900">
+
+<!-- ============ Navbar ============ -->
+<nav id="navbar" class="hidden bg-white border-b border-gray-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6">
+        <div class="flex items-center justify-between h-14">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-shield-halved text-xl text-blue-600"></i>
+                <span class="font-bold text-lg text-gray-900">AIHumanWarning</span>
+            </div>
+            <div class="flex items-center gap-4 sm:gap-6">
+                <a href="#page-dashboard" class="text-sm sm:text-base text-gray-600 hover:text-blue-600 transition-colors">
+                    <i class="fa-solid fa-video mr-1"></i><span>仪表盘</span>
+                </a>
+                <a href="#page-settings" class="text-sm sm:text-base text-gray-600 hover:text-blue-600 transition-colors">
+                    <i class="fa-solid fa-gear mr-1"></i><span>设置</span>
+                </a>
+                <div class="flex items-center gap-3 ml-2 sm:ml-4 pl-2 sm:pl-4 border-l border-gray-200">
+                    <span id="nav-username" class="text-sm text-gray-500 hidden sm:inline"></span>
+                    <button onclick="logout()" class="text-sm text-gray-600 hover:text-red-600 transition-colors">
+                        <i class="fa-solid fa-right-from-bracket mr-1"></i><span class="hidden sm:inline">退出</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ============ Page: Auth ============ -->
+<div id="page-auth" class="page">
+    <div class="min-h-screen flex items-center justify-center px-4 py-12">
+        <div class="bg-white p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-md">
+            <div class="text-center mb-8">
+                <i class="fa-solid fa-shield-halved text-4xl text-[#1E3A5F]"></i>
+                <h1 class="text-2xl font-bold text-gray-900 mt-3">AIHumanWarning</h1>
+                <p class="text-gray-500 text-sm mt-1">AI 视频监控预警系统</p>
+            </div>
+
+            <!-- Login Form -->
+            <div id="login-form">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                    <input type="text" id="login-username" autocomplete="username"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                    <input type="password" id="login-password" autocomplete="current-password"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <button onclick="handleLogin()"
+                        class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                    <i class="fa-solid fa-right-to-bracket mr-2"></i>登录
+                </button>
+                <p class="text-center mt-4 text-sm text-gray-500">
+                    没有账号？<a href="#" onclick="showRegister()" class="text-blue-600 hover:underline">点击注册</a>
+                </p>
+            </div>
+
+            <!-- Register Form -->
+            <div id="register-form" class="hidden">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                    <input type="text" id="reg-username" autocomplete="username"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                    <input type="password" id="reg-password" autocomplete="new-password"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">确认密码</label>
+                    <input type="password" id="reg-confirm" autocomplete="new-password"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <button onclick="handleRegister()"
+                        class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                    <i class="fa-solid fa-user-plus mr-2"></i>注册
+                </button>
+                <p class="text-center mt-4 text-sm text-gray-500">
+                    已有账号？<a href="#" onclick="showLogin()" class="text-blue-600 hover:underline">点击登录</a>
+                </p>
+            </div>
+
+            <div id="auth-error" class="mt-4 text-red-600 text-sm text-center hidden"></div>
+            <div id="auth-success" class="mt-4 text-green-600 text-sm text-center hidden"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ Page: Dashboard ============ -->
+<div id="page-dashboard" class="page hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-900">
+                <i class="fa-solid fa-video mr-2 text-blue-600"></i>视频流管理
+            </h1>
+            <button onclick="showAddModal()"
+                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base">
+                <i class="fa-solid fa-plus mr-1"></i>添加视频流
+            </button>
+        </div>
+        <div id="stream-loading" class="flex justify-center py-20">
+            <div class="loading-spinner"></div>
+        </div>
+        <div id="stream-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 hidden">
+        </div>
+        <div id="stream-empty" class="text-center py-20 text-gray-400 hidden">
+            <i class="fa-solid fa-video-slash text-5xl mb-4"></i>
+            <p class="text-lg">暂无视频流</p>
+            <p class="text-sm mt-1">点击上方按钮添加第一个视频流</p>
+        </div>
+    </div>
+</div>
+
+<!-- ============ Page: Stream Detail ============ -->
+<div id="page-stream-detail" class="page hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <button onclick="window.location.hash='page-dashboard'"
+                class="text-gray-500 hover:text-gray-800 transition-colors mb-4 text-sm">
+            <i class="fa-solid fa-arrow-left mr-1"></i>返回仪表盘
+        </button>
+
+        <!-- Header: name + status + edit + toggle -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <div class="flex items-center gap-3">
+                <h1 id="detail-title" class="text-xl sm:text-2xl font-bold text-gray-900"></h1>
+                <span id="detail-status-badge"></span>
+            </div>
+            <div class="flex items-center gap-3">
+                <button id="detail-edit-btn" onclick="editDetailStream()"
+                        class="text-sm px-3 py-1.5 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors">
+                    <i class="fa-solid fa-pen mr-1"></i>编辑
+                </button>
+                <label class="flex items-center gap-1.5 cursor-pointer select-none text-sm text-gray-500">
+                    <span id="detail-toggle-label">启用</span>
+                    <input type="checkbox" id="detail-enable" onchange="toggleDetailStream(this.checked)" class="sr-only peer">
+                    <div class="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-blue-600
+                                after:content-[''] after:absolute after:top-0.5 after:left-0.5
+                                after:bg-white after:border after:border-gray-300 after:rounded-full
+                                after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4
+                                relative cursor-pointer">
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <!-- Large Live Preview -->
+        <div class="bg-black rounded-lg overflow-hidden mb-6 shadow-sm">
+            <img id="detail-live-preview" class="detail-preview" alt="实时预览">
+        </div>
+
+        <!-- Info Row -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 p-4 bg-white rounded-lg border border-gray-200 text-sm">
+            <div class="min-w-0">
+                <span class="text-gray-500 text-xs"><i class="fa-solid fa-link mr-1"></i>RTSP 地址</span>
+                <p id="detail-rtsp" class="text-gray-900 truncate mt-0.5" title=""></p>
+            </div>
+            <div>
+                <span class="text-gray-500 text-xs"><i class="fa-solid fa-clock mr-1"></i>检测间隔</span>
+                <p id="detail-sec" class="text-gray-900 mt-0.5"></p>
+            </div>
+            <div class="min-w-0">
+                <span class="text-gray-500 text-xs"><i class="fa-solid fa-message mr-1"></i>检测提示词</span>
+                <p id="detail-prompt" class="text-gray-900 truncate mt-0.5" title=""></p>
+            </div>
+        </div>
+
+        <!-- Records Section -->
+        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-clock-rotate-left text-blue-600"></i>检测记录
+        </h2>
+        <div id="records-loading" class="flex justify-center py-12">
+            <div class="loading-spinner"></div>
+        </div>
+        <div id="records-empty" class="text-center py-12 text-gray-400 hidden">
+            <i class="fa-solid fa-clock-rotate-left text-5xl mb-4"></i>
+            <p class="text-lg">暂无检测记录</p>
+        </div>
+        <div id="records-list" class="space-y-3 hidden"></div>
+    </div>
+</div>
+
+<!-- ============ Page: Settings ============ -->
+<div id="page-settings" class="page hidden">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 py-6">
+        <h1 class="text-xl sm:text-2xl font-bold text-gray-900 mb-6">
+            <i class="fa-solid fa-gear mr-2 text-blue-600"></i>系统设置
+        </h1>
+
+        <!-- LLM Config -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 sm:p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                <i class="fa-solid fa-brain mr-2 text-blue-600"></i>LLM 配置
+            </h2>
+            <div id="llm-loading" class="flex justify-center py-8">
+                <div class="loading-spinner"></div>
+            </div>
+            <div id="llm-form" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">API 地址</label>
+                    <input type="text" id="llm-baseurl"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">API 密钥</label>
+                    <input type="password" id="llm-apikey"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">模型名称</label>
+                    <input type="text" id="llm-modelname"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="handleSaveLlm()"
+                            class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                        <i class="fa-solid fa-floppy-disk mr-1"></i>保存配置
+                    </button>
+                    <span id="llm-save-msg" class="text-sm text-green-600 hidden">
+                        <i class="fa-solid fa-circle-check mr-1"></i>保存成功
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Change Password -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 sm:p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                <i class="fa-solid fa-key mr-2 text-blue-600"></i>修改密码
+            </h2>
+            <div class="space-y-4 max-w-md">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">新密码</label>
+                    <input type="password" id="new-password" autocomplete="new-password"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">确认新密码</label>
+                    <input type="password" id="new-password-confirm" autocomplete="new-password"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="handleChangePassword()"
+                            class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                        <i class="fa-solid fa-save mr-1"></i>修改密码
+                    </button>
+                    <span id="pwd-save-msg" class="text-sm text-green-600 hidden">
+                        <i class="fa-solid fa-circle-check mr-1"></i>密码修改成功
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ Modal: Add/Edit Stream ============ -->
+<div id="stream-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center hidden z-50 px-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+         onclick="event.stopPropagation()">
+        <div class="flex justify-between items-center p-4 sm:p-5 border-b border-gray-200">
+            <h3 id="modal-title" class="text-lg font-semibold text-gray-900"></h3>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition-colors p-1">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+        </div>
+        <div class="p-4 sm:p-5 space-y-4">
+            <input type="hidden" id="stream-id">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">流名称</label>
+                <input type="text" id="stream-name"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">RTSP 地址</label>
+                <input type="text" id="stream-rtsp" placeholder="rtsp://..."
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">检测提示词</label>
+                <textarea id="stream-prompt" rows="2"
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+            </div>
+            <div class="flex gap-4">
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">检测间隔（秒）</label>
+                    <input type="number" id="stream-sec" min="1" value="30"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div class="flex items-end pb-2">
+                    <label class="flex items-center gap-2 cursor-pointer select-none">
+                        <span class="text-sm font-medium text-gray-700">启用</span>
+                        <input type="checkbox" id="stream-enable" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600
+                                    after:content-[''] after:absolute after:top-0.5 after:left-0.5
+                                    after:bg-white after:border after:border-gray-300 after:rounded-full
+                                    after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5
+                                    relative cursor-pointer">
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="flex justify-end gap-3 p-4 sm:p-5 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+            <button onclick="closeModal()"
+                    class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors text-sm">
+                取消
+            </button>
+            <button id="modal-submit-btn" onclick="handleSubmitStream()"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                保存
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============ Modal: Delete Confirmation ============ -->
+<div id="delete-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center hidden z-50 px-4"
+     onclick="closeDeleteModal()">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-sm mx-4 p-6" onclick="event.stopPropagation()">
+        <div class="text-center mb-6">
+            <i class="fa-solid fa-triangle-exclamation text-4xl text-red-500 mb-3"></i>
+            <h3 class="text-lg font-semibold text-gray-900">确认删除</h3>
+            <p class="text-gray-500 text-sm mt-1">确定要删除该视频流吗？此操作不可恢复。</p>
+        </div>
+        <div class="flex justify-center gap-3">
+            <button onclick="closeDeleteModal()"
+                    class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors text-sm">
+                取消
+            </button>
+            <button onclick="handleDeleteStream()"
+                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium">
+                <i class="fa-solid fa-trash-can mr-1"></i>确认删除
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============ Modal: Image Preview ============ -->
+<div id="image-preview-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center hidden z-50 px-4"
+     onclick="document.getElementById('image-preview-modal').classList.add('hidden')">
+    <div class="relative max-w-4xl max-h-[90vh] w-full" onclick="event.stopPropagation()">
+        <button onclick="document.getElementById('image-preview-modal').classList.add('hidden')"
+                class="absolute -top-3 -right-3 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-md hover:bg-gray-100 transition-colors z-10">
+            <i class="fa-solid fa-xmark text-gray-600"></i>
+        </button>
+        <img id="preview-img" class="w-full h-auto rounded-lg shadow-xl" alt="截图预览">
+    </div>
+</div>
+
+<!-- ============ Toast ============ -->
+<div id="toast" class="fixed top-4 right-4 z-50 hidden"></div>
+
+<script src="auth.js"></script>
+<script src="api.js"></script>
+<script>
+(function() {
+    'use strict';
+
+    var deleteTargetId = null;
+    var currentDetailId = null;
+    var streamsData = [];
+
+    /* ============= Toast ============= */
+    function showToast(msg, type) {
+        var toast = document.getElementById('toast');
+        var icon = type === 'error' ? 'fa-circle-xmark text-red-400' :
+                   type === 'success' ? 'fa-circle-check text-green-400' : 'fa-circle-info text-blue-400';
+        var bg = type === 'error' ? 'bg-red-50 border-red-200 text-red-800' :
+                 type === 'success' ? 'bg-green-50 border-green-200 text-green-800' :
+                 'bg-blue-50 border-blue-200 text-blue-800';
+        toast.className = 'fixed top-4 right-4 z-50 toast-enter';
+        toast.innerHTML = '<div class="flex items-center gap-2 px-4 py-3 rounded-lg border shadow-md ' + bg + '">' +
+            '<i class="fa-solid ' + icon + '"></i><span class="text-sm">' + msg + '</span></div>';
+        toast.classList.remove('hidden');
+        setTimeout(function() {
+            toast.classList.add('hidden');
+        }, 3000);
+    }
+
+    /* ============= Navigation / Routing ============= */
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(function(p) {
+            p.classList.add('hidden');
+        });
+        var el = document.getElementById(pageId);
+        if (el) el.classList.remove('hidden');
+    }
+
+    function handleRoute() {
+        var hash = window.location.hash.slice(1) || 'page-auth';
+        var isAuth = isLoggedIn();
+
+        document.getElementById('navbar').classList.toggle('hidden', !isAuth);
+        if (isAuth) {
+            document.getElementById('nav-username').textContent = getUser();
+        }
+
+        if (!isAuth && hash !== 'page-auth') {
+            window.location.hash = 'page-auth';
+            return;
+        }
+
+        if (hash === 'page-auth') {
+            showPage('page-auth');
+        } else if (hash === 'page-dashboard') {
+            showPage('page-dashboard');
+            loadStreams();
+        } else if (hash.indexOf('page-stream-detail') === 0) {
+            var params = new URLSearchParams(hash.split('?')[1] || '');
+            var id = params.get('id');
+            if (id) {
+                currentDetailId = parseInt(id, 10);
+                showPage('page-stream-detail');
+                loadDetailPage(currentDetailId);
+            } else {
+                window.location.hash = 'page-dashboard';
+            }
+        } else if (hash === 'page-settings') {
+            showPage('page-settings');
+            loadLlmConfig();
+        } else {
+            window.location.hash = 'page-auth';
+        }
+    }
+
+    window.addEventListener('hashchange', handleRoute);
+
+    /* ============= Auth ============= */
+    window.showRegister = function() {
+        document.getElementById('login-form').classList.add('hidden');
+        document.getElementById('register-form').classList.remove('hidden');
+        document.getElementById('auth-error').classList.add('hidden');
+        document.getElementById('auth-success').classList.add('hidden');
+    };
+
+    window.showLogin = function() {
+        document.getElementById('register-form').classList.add('hidden');
+        document.getElementById('login-form').classList.remove('hidden');
+        document.getElementById('auth-error').classList.add('hidden');
+        document.getElementById('auth-success').classList.add('hidden');
+    };
+
+    window.handleLogin = async function() {
+        var username = document.getElementById('login-username').value.trim();
+        var password = document.getElementById('login-password').value;
+        var errEl = document.getElementById('auth-error');
+        errEl.classList.add('hidden');
+
+        if (!username || !password) {
+            errEl.textContent = '请输入用户名和密码';
+            errEl.classList.remove('hidden');
+            return;
+        }
+
+        try {
+            var data = await api.login(username, password);
+            setToken(data.token);
+            setUser(username);
+            showToast('登录成功', 'success');
+            window.location.hash = 'page-dashboard';
+        } catch (e) {
+            errEl.textContent = e.message;
+            errEl.classList.remove('hidden');
+        }
+    };
+
+    window.handleRegister = async function() {
+        var username = document.getElementById('reg-username').value.trim();
+        var password = document.getElementById('reg-password').value;
+        var confirm = document.getElementById('reg-confirm').value;
+        var errEl = document.getElementById('auth-error');
+        var sucEl = document.getElementById('auth-success');
+        errEl.classList.add('hidden');
+        sucEl.classList.add('hidden');
+
+        if (!username || !password || !confirm) {
+            errEl.textContent = '请填写所有字段';
+            errEl.classList.remove('hidden');
+            return;
+        }
+        if (password !== confirm) {
+            errEl.textContent = '两次密码输入不一致';
+            errEl.classList.remove('hidden');
+            return;
+        }
+        if (password.length < 6) {
+            errEl.textContent = '密码长度至少为6位';
+            errEl.classList.remove('hidden');
+            return;
+        }
+
+        try {
+            await api.register(username, password);
+            sucEl.textContent = '注册成功，请登录';
+            sucEl.classList.remove('hidden');
+            document.getElementById('login-username').value = username;
+            showLogin();
+        } catch (e) {
+            errEl.textContent = e.message;
+            errEl.classList.remove('hidden');
+        }
+    };
+
+    window.logout = function() {
+        logout();
+        showToast('已退出登录', 'info');
+    };
+
+    /* ============= Dashboard - Stream CRUD ============= */
+    async function loadStreams() {
+        var grid = document.getElementById('stream-grid');
+        var empty = document.getElementById('stream-empty');
+        var loading = document.getElementById('stream-loading');
+        grid.classList.add('hidden');
+        empty.classList.add('hidden');
+        loading.classList.remove('hidden');
+
+        try {
+            streamsData = await api.getStreams() || [];
+            loading.classList.add('hidden');
+            if (streamsData.length === 0) {
+                empty.classList.remove('hidden');
+                return;
+            }
+            renderStreams(streamsData);
+            grid.classList.remove('hidden');
+        } catch (e) {
+            loading.classList.add('hidden');
+            showToast('加载流列表失败: ' + e.message, 'error');
+        }
+    }
+
+    function renderStreams(streams) {
+        var grid = document.getElementById('stream-grid');
+        grid.innerHTML = '';
+        streams.forEach(function(s) {
+            grid.appendChild(createStreamCard(s));
+        });
+    }
+
+    function createStreamCard(s) {
+        var liveUrl = api.getLiveStreamUrl(s.id);
+        var card = document.createElement('div');
+        card.className = 'stream-card bg-white rounded-lg border border-gray-200 overflow-hidden transition-shadow';
+
+        card.innerHTML =
+            '<div class="relative bg-black" style="aspect-ratio:16/9">' +
+                '<img src="' + liveUrl + '" alt="预览" class="stream-preview" loading="lazy"' +
+                    ' onerror="this.innerHTML=\'<div class=\\\'stream-preview flex items-center justify-center text-gray-500 bg-black\\\'><i class=\\\'fa-solid fa-video-slash text-2xl\\\'></i></div>\'">' +
+            '</div>' +
+            '<div class="p-4">' +
+                '<div class="flex items-start justify-between mb-2">' +
+                    '<h3 class="font-semibold text-gray-900 truncate flex-1" title="' + escHtml(s.name) + '">' + escHtml(s.name) + '</h3>' +
+                    '<span class="ml-2 flex-shrink-0">' + statusBadge(s.enable) + '</span>' +
+                '</div>' +
+                '<p class="text-xs text-gray-500 truncate mb-3" title="' + escHtml(s.rtsp_link) + '">' +
+                    '<i class="fa-solid fa-link mr-1"></i>' + escHtml(s.rtsp_link) +
+                '</p>' +
+                '<div class="flex items-center gap-2 text-xs text-gray-500 mb-3">' +
+                    '<span><i class="fa-solid fa-clock mr-1"></i>' + s.sec + '秒</span>' +
+                    '<span class="text-gray-300">|</span>' +
+                    '<span class="truncate flex-1" title="' + escHtml(s.prompt) + '"><i class="fa-solid fa-message mr-1"></i>' + escHtml(s.prompt) + '</span>' +
+                '</div>' +
+                '<div class="flex items-center flex-wrap gap-2 pt-3 border-t border-gray-100">' +
+                    '<button onclick="window.location.hash=\'page-stream-detail?id=' + s.id + '\'"' +
+                        ' class="text-xs px-3 py-1.5 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors">' +
+                        '<i class="fa-solid fa-list mr-1"></i>记录</button>' +
+                    '<button onclick="window.showEditModal(' + s.id + ')"' +
+                        ' class="text-xs px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors">' +
+                        '<i class="fa-solid fa-pen mr-1"></i>编辑</button>' +
+                    '<button onclick="window.confirmDelete(' + s.id + ')"' +
+                        ' class="text-xs px-3 py-1.5 bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors">' +
+                        '<i class="fa-solid fa-trash-can mr-1"></i>删除</button>' +
+                    '<label class="ml-auto flex items-center gap-1.5 cursor-pointer select-none text-xs text-gray-500">' +
+                        '<span>' + (s.enable ? '已启用' : '已停用') + '</span>' +
+                        '<input type="checkbox" ' + (s.enable ? 'checked' : '') +
+                            ' onchange="window.toggleStream(' + s.id + ', this.checked)" class="sr-only peer">' +
+                        '<div class="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-blue-600' +
+                            ' after:content-[\'\'] after:absolute after:top-0.5 after:left-0.5' +
+                            ' after:bg-white after:border after:border-gray-300 after:rounded-full' +
+                            ' after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4' +
+                            ' relative cursor-pointer">' +
+                        '</div>' +
+                    '</label>' +
+                '</div>' +
+            '</div>';
+
+        return card;
+    }
+
+    function statusBadge(enable) {
+        if (enable) {
+            return '<span class="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-medium">运行中</span>';
+        }
+        return '<span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full font-medium">已停用</span>';
+    }
+
+    function escHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                  .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    window.toggleStream = async function(id, enable) {
+        try {
+            await api.editStream({ id: id, enable: enable });
+            showToast(enable ? '已启用视频流' : '已停用视频流', 'success');
+            loadStreams();
+        } catch (e) {
+            showToast('操作失败: ' + e.message, 'error');
+            loadStreams();
+        }
+    };
+
+    /* ============= Stream Modal (Add/Edit) ============= */
+    var isEditMode = false;
+
+    function resetModal() {
+        document.getElementById('stream-id').value = '';
+        document.getElementById('stream-name').value = '';
+        document.getElementById('stream-rtsp').value = '';
+        document.getElementById('stream-prompt').value = '';
+        document.getElementById('stream-sec').value = '30';
+        document.getElementById('stream-enable').checked = true;
+        isEditMode = false;
+    }
+
+    window.showAddModal = function() {
+        resetModal();
+        document.getElementById('modal-title').textContent = '添加视频流';
+        document.getElementById('modal-submit-btn').textContent = '添加';
+        document.getElementById('stream-modal').classList.remove('hidden');
+    };
+
+    window.showEditModal = function(id) {
+        var stream = streamsData.find(function(s) { return s.id === id; });
+        if (!stream) return;
+        document.getElementById('stream-id').value = stream.id;
+        document.getElementById('stream-name').value = stream.name;
+        document.getElementById('stream-rtsp').value = stream.rtsp_link;
+        document.getElementById('stream-prompt').value = stream.prompt;
+        document.getElementById('stream-sec').value = stream.sec;
+        document.getElementById('stream-enable').checked = stream.enable;
+        isEditMode = true;
+        document.getElementById('modal-title').textContent = '编辑视频流';
+        document.getElementById('modal-submit-btn').textContent = '保存修改';
+        document.getElementById('stream-modal').classList.remove('hidden');
+    };
+
+    window.closeModal = function() {
+        document.getElementById('stream-modal').classList.add('hidden');
+    };
+
+    window.handleSubmitStream = async function() {
+        var id = document.getElementById('stream-id').value;
+        var name = document.getElementById('stream-name').value.trim();
+        var rtsp = document.getElementById('stream-rtsp').value.trim();
+        var prompt = document.getElementById('stream-prompt').value.trim();
+        var sec = parseInt(document.getElementById('stream-sec').value, 10);
+        var enable = document.getElementById('stream-enable').checked;
+
+        if (!name || !rtsp || !prompt || !sec) {
+            showToast('请填写所有必填字段', 'error');
+            return;
+        }
+
+        try {
+            if (isEditMode) {
+                var payload = { id: parseInt(id, 10) };
+                var orig = streamsData.find(function(s) { return s.id === parseInt(id, 10); });
+                if (orig) {
+                    if (name !== orig.name) payload.name = name;
+                    if (rtsp !== orig.rtsp_link) payload.rtsp_link = rtsp;
+                    if (prompt !== orig.prompt) payload.prompt = prompt;
+                    if (sec !== orig.sec) payload.sec = sec;
+                    if (enable !== orig.enable) payload.enable = enable;
+                }
+                await api.editStream(payload);
+                showToast('视频流已更新', 'success');
+            } else {
+                await api.addStream({ name: name, rtsp_link: rtsp, prompt: prompt, sec: sec, enable: enable });
+                showToast('视频流已添加', 'success');
+            }
+            closeModal();
+            loadStreams();
+        } catch (e) {
+            showToast('操作失败: ' + e.message, 'error');
+        }
+    };
+
+    /* ============= Delete Modal ============= */
+    window.confirmDelete = function(id) {
+        deleteTargetId = id;
+        document.getElementById('delete-modal').classList.remove('hidden');
+    };
+
+    window.closeDeleteModal = function() {
+        deleteTargetId = null;
+        document.getElementById('delete-modal').classList.add('hidden');
+    };
+
+    window.handleDeleteStream = async function() {
+        if (!deleteTargetId) return;
+        try {
+            await api.deleteStream(deleteTargetId);
+            showToast('视频流已删除', 'success');
+            closeDeleteModal();
+            loadStreams();
+        } catch (e) {
+            showToast('删除失败: ' + e.message, 'error');
+            closeDeleteModal();
+        }
+    };
+
+    /* ============= Detail Page ============= */
+    async function loadDetailPage(id) {
+        var stream = streamsData.find(function(s) { return s.id === id; });
+        if (!stream) {
+            try {
+                streamsData = await api.getStreams() || [];
+                stream = streamsData.find(function(s) { return s.id === id; });
+            } catch (e) {
+                showToast('加载流信息失败', 'error');
+                return;
+            }
+        }
+
+        // Set header
+        document.getElementById('detail-title').textContent = stream ? stream.name : '流 #' + id;
+        updateDetailStatus(stream ? stream.enable : false);
+
+        // Set info
+        document.getElementById('detail-rtsp').textContent = stream ? stream.rtsp_link : '-';
+        document.getElementById('detail-rtsp').title = stream ? stream.rtsp_link : '';
+        document.getElementById('detail-sec').textContent = stream ? stream.sec + ' 秒' : '-';
+        document.getElementById('detail-prompt').textContent = stream ? stream.prompt : '-';
+        document.getElementById('detail-prompt').title = stream ? stream.prompt : '';
+
+        // Set live preview
+        var liveUrl = api.getLiveStreamUrl(id);
+        document.getElementById('detail-live-preview').src = liveUrl;
+
+        // Set toggle
+        var toggle = document.getElementById('detail-enable');
+        toggle.checked = stream ? stream.enable : false;
+
+        // Load records
+        loadRecords(id);
+    }
+
+    function updateDetailStatus(enable) {
+        var badge = document.getElementById('detail-status-badge');
+        var label = document.getElementById('detail-toggle-label');
+        if (enable) {
+            badge.innerHTML = '<span class="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-medium">运行中</span>';
+            label.textContent = '已启用';
+        } else {
+            badge.innerHTML = '<span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full font-medium">已停用</span>';
+            label.textContent = '已停用';
+        }
+    }
+
+    window.toggleDetailStream = async function(enable) {
+        if (!currentDetailId) return;
+        try {
+            await api.editStream({ id: currentDetailId, enable: enable });
+            updateDetailStatus(enable);
+            showToast(enable ? '已启用视频流' : '已停用视频流', 'success');
+            // Update streamsData
+            var stream = streamsData.find(function(s) { return s.id === currentDetailId; });
+            if (stream) stream.enable = enable;
+        } catch (e) {
+            document.getElementById('detail-enable').checked = !enable;
+            showToast('操作失败: ' + e.message, 'error');
+        }
+    };
+
+    window.editDetailStream = function() {
+        if (currentDetailId) {
+            window.showEditModal(currentDetailId);
+        }
+    };
+
+    /* ============= Records ============= */
+    async function loadRecords(id) {
+        var list = document.getElementById('records-list');
+        var empty = document.getElementById('records-empty');
+        var loading = document.getElementById('records-loading');
+
+        list.classList.add('hidden');
+        empty.classList.add('hidden');
+        loading.classList.remove('hidden');
+
+        try {
+            var records = await api.getRecords(id) || [];
+            loading.classList.add('hidden');
+            if (records.length === 0) {
+                empty.classList.remove('hidden');
+                return;
+            }
+            renderRecords(records);
+            list.classList.remove('hidden');
+        } catch (e) {
+            loading.classList.add('hidden');
+            showToast('加载记录失败: ' + e.message, 'error');
+            list.innerHTML = '<div class="text-center py-10 text-gray-500">加载失败</div>';
+            list.classList.remove('hidden');
+        }
+    }
+
+    function renderRecords(records) {
+        var list = document.getElementById('records-list');
+        list.innerHTML = '';
+        records.forEach(function(r) {
+            list.appendChild(createRecordRow(r));
+        });
+        // Load images with auth after elements are in DOM
+        loadRecordImages();
+    }
+
+    function createRecordRow(r) {
+        var filename = r.image_url ? r.image_url.split('/').pop() : '';
+        var div = document.createElement('div');
+        div.className = 'bg-white rounded-lg border border-gray-200 p-3 sm:p-4 flex flex-col sm:flex-row gap-3 sm:gap-4 items-start';
+
+        var statusColor = r.status ? 'text-red-600 bg-red-50 border-red-200' : 'text-green-600 bg-green-50 border-green-200';
+        var statusIcon = r.status ? 'fa-triangle-exclamation' : 'fa-circle-check';
+        var statusText = r.status ? '预警' : '正常';
+
+        div.innerHTML =
+            '<div class="flex-shrink-0">' +
+                '<div class="record-thumb-container record-thumb flex items-center justify-center bg-gray-100 text-gray-400"' +
+                    ' data-stream-id="' + r.stream_id + '" data-filename="' + filename + '">' +
+                    '<i class="fa-solid fa-spinner fa-spin"></i>' +
+                '</div>' +
+            '</div>' +
+            '<div class="flex-1 min-w-0">' +
+                '<div class="flex items-center gap-2 mb-1.5">' +
+                    '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ' + statusColor + '">' +
+                        '<i class="fa-solid ' + statusIcon + '"></i>' + statusText +
+                    '</span>' +
+                '</div>' +
+                '<p class="text-sm text-gray-700 mb-1"><span class="text-gray-500">理由：</span>' + escHtml(r.reason) + '</p>' +
+                '<p class="text-xs text-gray-500"><span class="text-gray-400">提示词：</span>' + escHtml(r.prompt) + '</p>' +
+            '</div>';
+
+        return div;
+    }
+
+    function loadRecordImages() {
+        document.querySelectorAll('.record-thumb-container').forEach(function(container) {
+            var streamId = container.getAttribute('data-stream-id');
+            var filename = container.getAttribute('data-filename');
+            if (!streamId || !filename) {
+                container.innerHTML = '<div class="record-thumb flex items-center justify-center bg-gray-100 text-gray-400"><i class="fa-solid fa-image"></i></div>';
+                return;
+            }
+            api.fetchImageBlob(streamId, filename)
+                .then(function(blob) {
+                    var blobUrl = URL.createObjectURL(blob);
+                    var img = document.createElement('img');
+                    img.src = blobUrl;
+                    img.className = 'record-thumb';
+                    img.alt = '截图';
+                    img.onclick = function() { showImagePreview(streamId, filename); };
+                    container.innerHTML = '';
+                    container.appendChild(img);
+                })
+                .catch(function() {
+                    container.innerHTML = '<div class="record-thumb flex items-center justify-center bg-gray-100 text-gray-400"><i class="fa-solid fa-image"></i></div>';
+                });
+        });
+    }
+
+    window.showImagePreview = function(streamId, filename) {
+        var modal = document.getElementById('image-preview-modal');
+        var img = document.getElementById('preview-img');
+        img.src = '';
+        modal.classList.remove('hidden');
+        img.classList.add('pulse');
+        api.fetchImageBlob(streamId, filename)
+            .then(function(blob) {
+                img.classList.remove('pulse');
+                img.src = URL.createObjectURL(blob);
+            })
+            .catch(function() {
+                img.classList.remove('pulse');
+                modal.classList.add('hidden');
+                showToast('加载图片失败', 'error');
+            });
+    };
+
+    /* ============= Settings ============= */
+    async function loadLlmConfig() {
+        var form = document.getElementById('llm-form');
+        var loading = document.getElementById('llm-loading');
+        var msg = document.getElementById('llm-save-msg');
+        form.classList.add('hidden');
+        loading.classList.remove('hidden');
+        msg.classList.add('hidden');
+
+        try {
+            var config = await api.getLlmConfig();
+            loading.classList.add('hidden');
+            if (config) {
+                document.getElementById('llm-baseurl').value = config.baseurl || '';
+                document.getElementById('llm-apikey').value = config.apikey || '';
+                document.getElementById('llm-modelname').value = config.modelname || '';
+            }
+            form.classList.remove('hidden');
+        } catch (e) {
+            loading.classList.add('hidden');
+            showToast('加载 LLM 配置失败: ' + e.message, 'error');
+        }
+    }
+
+    window.handleSaveLlm = async function() {
+        var baseurl = document.getElementById('llm-baseurl').value.trim();
+        var apikey = document.getElementById('llm-apikey').value.trim();
+        var modelname = document.getElementById('llm-modelname').value.trim();
+        var msg = document.getElementById('llm-save-msg');
+        msg.classList.add('hidden');
+
+        var payload = {};
+        if (baseurl) payload.baseurl = baseurl;
+        if (apikey) payload.apikey = apikey;
+        if (modelname) payload.modelname = modelname;
+
+        try {
+            await api.editLlmConfig(payload);
+            msg.classList.remove('hidden');
+            setTimeout(function() { msg.classList.add('hidden'); }, 3000);
+            showToast('LLM 配置已保存', 'success');
+        } catch (e) {
+            showToast('保存失败: ' + e.message, 'error');
+        }
+    };
+
+    window.handleChangePassword = async function() {
+        var pwd = document.getElementById('new-password').value;
+        var confirm = document.getElementById('new-password-confirm').value;
+        var msg = document.getElementById('pwd-save-msg');
+        msg.classList.add('hidden');
+
+        if (!pwd || !confirm) {
+            showToast('请填写所有字段', 'error');
+            return;
+        }
+        if (pwd !== confirm) {
+            showToast('两次密码输入不一致', 'error');
+            return;
+        }
+        if (pwd.length < 6) {
+            showToast('密码长度至少为6位', 'error');
+            return;
+        }
+
+        try {
+            await api.changePassword(pwd);
+            document.getElementById('new-password').value = '';
+            document.getElementById('new-password-confirm').value = '';
+            msg.classList.remove('hidden');
+            setTimeout(function() { msg.classList.add('hidden'); }, 3000);
+            showToast('密码修改成功', 'success');
+        } catch (e) {
+            showToast('修改失败: ' + e.message, 'error');
+        }
+    };
+
+    /* ============= Init ============= */
+    document.addEventListener('DOMContentLoaded', function() {
+        if (isLoggedIn()) {
+            window.location.hash = 'page-dashboard';
+        } else {
+            window.location.hash = 'page-auth';
+        }
+        handleRoute();
+    });
+
+})();
+</script>
+</body>
+</html>
