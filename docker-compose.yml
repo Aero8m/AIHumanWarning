@@ -4,7 +4,7 @@ services:
     ports:
       - "6666:5000"
     volumes:
-      - ./data /app/data
+      - ./data:/app/data
     environment:
         - SECRET_KEY=${SECRET_KEY}
         - JWT_SECRET_KEY=${SECRET_KEY}
