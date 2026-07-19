@@ -14,4 +14,4 @@ RUN chmod +x boot.sh
 
 EXPOSE 5000
 
-CMD ["python", "run.py"]
+ENTRYPOINT ["./boot.sh"]
